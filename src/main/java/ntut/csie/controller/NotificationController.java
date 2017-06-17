@@ -1,5 +1,6 @@
 package ntut.csie.controller;
 
+import ntut.csie.repository.TokenRelationRepository;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -22,6 +23,9 @@ import ntut.csie.service.TokenRelationService;
 @RestController
 @RequestMapping(path = "notify")
 public class NotificationController {
+    @Autowired
+    private TokenRelationRepository tokenRelationRepository;
+
     @Autowired
     private SubscriberService subscriberService;
 
@@ -77,25 +81,64 @@ public class NotificationController {
         String tokenString = payload.get("token");
         Subscriber subscriber = subscriberService.findSubscriberByUsername(username);
         Long subscriberId;
-        if(subscriber == null){
-            return "Fail";
-        }
-        else{
-            subscriberId = subscriber.getId();
-        }
         TokenModel _token = tokenService.getTokenByTokenString(tokenString);
         Long tokenId;
-        if(_token == null){
-            return "Fail";
+        if(subscriber != null && _token != null){
+            subscriberId = subscriber.getId();
+            tokenId = _token.getId();
+            TokenRelationModel tokenRelationModel = tokenRelationService.getRelation(subscriberId,tokenId);
+            if(tokenRelationModel != null){
+                tokenRelationService.delete(tokenRelationModel.getId());
+                return "Success";
+            }
+            return "fail";
         }
         else{
-            tokenId = _token.getId();
+            return "fail";
         }
-
-        TokenRelationModel tokenRelationModel = tokenRelationService.getRelation(subscriberId,tokenId);
-        tokenRelationService.delete(tokenRelationModel.getId());
-        return "Success";
     }
 
-    
+    @RequestMapping(method = RequestMethod.POST, path ="/notifyLogon", produces = MediaType.APPLICATION_JSON_VALUE)
+    public @ResponseBody String NotifyLogon(@RequestBody Map<String, String> payload) throws JSONException {
+        String username = payload.get("username");
+        String tokenString = payload.get("token");
+        Subscriber subscriber = subscriberService.findSubscriberByUsername(username);
+        Long subscriberId;
+        TokenModel _token = tokenService.getTokenByTokenString(tokenString);
+        Long tokenId;
+        if(subscriber != null && _token != null){
+            subscriberId = subscriber.getId();
+            tokenId = _token.getId();
+            TokenRelationModel tokenRelationModel = tokenRelationService.getRelation(subscriberId,tokenId);
+            if(tokenRelationModel != null){
+                tokenRelationModel.setLogon(true);
+                tokenRelationRepository.save(tokenRelationModel);
+                return "Subscript";
+            }
+            return "UnSubscript";
+        }
+        else{
+            return "UnSubscript";
+        }
+    }
+
+    @RequestMapping(method = RequestMethod.POST, path ="/notifyLogOut", produces = MediaType.APPLICATION_JSON_VALUE)
+    public @ResponseBody String NotifyLogOut(@RequestBody Map<String, String> payload) throws JSONException {
+        String username = payload.get("username");
+        String tokenString = payload.get("token");
+        Subscriber subscriber = subscriberService.findSubscriberByUsername(username);
+        Long subscriberId;
+        TokenModel _token = tokenService.getTokenByTokenString(tokenString);
+        Long tokenId;
+        if(subscriber != null && _token != null){
+            subscriberId = subscriber.getId();
+            tokenId = _token.getId();
+            TokenRelationModel tokenRelationModel = tokenRelationService.getRelation(subscriberId,tokenId);
+            if(tokenRelationModel != null){
+                tokenRelationModel.setLogon(false);
+                tokenRelationRepository.save(tokenRelationModel);
+            }
+        }
+        return "Success";
+    }
 }
