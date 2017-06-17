@@ -1,7 +1,5 @@
 package ntut.csie.model;
 
-import org.hibernate.validator.constraints.NotBlank;
-
 import javax.persistence.*;
 
 @Entity

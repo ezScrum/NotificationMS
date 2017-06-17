@@ -35,20 +35,16 @@ public class NotificationController {
     public @ResponseBody String doSubscript(@RequestBody Map<String, String> payload) throws JSONException{
         String username = payload.get("username");
         String tokenString = payload.get("token");
-        System.out.println("username : " + username + "  token : " + tokenString);
         //Subscriber
         Subscriber subscriber = subscriberService.findSubscriberByUsername(username);
         Long subscriberId;
         if(subscriber == null){
             subscriber = new Subscriber();
             subscriber.setUsername(username);
-            System.out.println("Create subscriber");
             subscriberId = subscriberService.save(subscriber).getId();
-            System.out.println("subscriberId : " + subscriberId);
         }
         else{
             subscriberId = subscriber.getId();
-            System.out.println("subscriberId : " + subscriberId);
         }
 
         //Token
@@ -57,22 +53,16 @@ public class NotificationController {
         if(_token == null){
             _token = new TokenModel();
             _token.setToken(tokenString);
-            System.out.println("Create token");
             tokenId = tokenService.save(_token).getId();
-            System.out.println("tokenId : " + tokenId);
         }
         else{
             tokenId = _token.getId();
-            System.out.println("tokenId : " + tokenId);
         }
 
         //Mapping
         TokenRelationModel tokenRelationModel = tokenRelationService.getRelation(subscriberId,tokenId);
-        System.out.println("Start store mapping");
         if(tokenRelationModel == null){
             tokenRelationModel = new TokenRelationModel();
-            System.out.println("subscriberId : " + subscriberId);
-            System.out.println("tokenId : " + tokenId);
             tokenRelationModel.setSubscriberId(subscriberId);
             tokenRelationModel.setTokenId(tokenId);
             tokenRelationModel.setLogon(true);
@@ -80,4 +70,32 @@ public class NotificationController {
         }
         return "Success";
     }
+
+    @RequestMapping(method = RequestMethod.POST, path ="/unSubscript", produces = MediaType.APPLICATION_JSON_VALUE)
+    public @ResponseBody String doUnSubscript(@RequestBody Map<String, String> payload) throws JSONException {
+        String username = payload.get("username");
+        String tokenString = payload.get("token");
+        Subscriber subscriber = subscriberService.findSubscriberByUsername(username);
+        Long subscriberId;
+        if(subscriber == null){
+            return "Fail";
+        }
+        else{
+            subscriberId = subscriber.getId();
+        }
+        TokenModel _token = tokenService.getTokenByTokenString(tokenString);
+        Long tokenId;
+        if(_token == null){
+            return "Fail";
+        }
+        else{
+            tokenId = _token.getId();
+        }
+
+        TokenRelationModel tokenRelationModel = tokenRelationService.getRelation(subscriberId,tokenId);
+        tokenRelationService.delete(tokenRelationModel.getId());
+        return "Success";
+    }
+
+    
 }

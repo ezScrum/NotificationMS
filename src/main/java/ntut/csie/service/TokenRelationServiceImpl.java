@@ -32,7 +32,6 @@ public class TokenRelationServiceImpl implements TokenRelationService{
     public TokenRelationModel save(TokenRelationModel tokenRelationModel){
         TokenRelationModel trm = new TokenRelationModel();
         trm.setSubscriberId(tokenRelationModel.getSubscriberId());
-        System.out.println("In Impl SubscriberId : " + trm.getSubscriberId());
         trm.setTokenId(tokenRelationModel.getTokenId());
         trm.setLogon(tokenRelationModel.getLogon());
         return tokenRelationRepository.save(trm);
