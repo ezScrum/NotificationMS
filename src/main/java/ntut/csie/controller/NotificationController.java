@@ -12,13 +12,16 @@ import org.springframework.http.MediaType;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.util.ArrayList;
 import java.util.Map;
-import ntut.csie.model.Subscriber;
-import ntut.csie.model.TokenModel;
-import ntut.csie.model.TokenRelationModel;
+import java.util.List;
+
+import ntut.csie.model.*;
 import ntut.csie.service.SubscriberService;
 import ntut.csie.service.TokenService;
 import ntut.csie.service.TokenRelationService;
+
 
 @RestController
 @RequestMapping(path = "notify")
@@ -126,6 +129,8 @@ public class NotificationController {
     public @ResponseBody String NotifyLogOut(@RequestBody Map<String, String> payload) throws JSONException {
         String username = payload.get("username");
         String tokenString = payload.get("token");
+        System.out.println(username);
+        System.out.println(tokenString);
         Subscriber subscriber = subscriberService.findSubscriberByUsername(username);
         Long subscriberId;
         TokenModel _token = tokenService.getTokenByTokenString(tokenString);
@@ -133,6 +138,8 @@ public class NotificationController {
         if(subscriber != null && _token != null){
             subscriberId = subscriber.getId();
             tokenId = _token.getId();
+
+            //ToDo getUsernamesByProjectId
             TokenRelationModel tokenRelationModel = tokenRelationService.getRelation(subscriberId,tokenId);
             if(tokenRelationModel != null){
                 tokenRelationModel.setLogon(false);
@@ -140,5 +147,53 @@ public class NotificationController {
             }
         }
         return "Success";
+    }
+
+    @RequestMapping(method = RequestMethod.POST, path ="/send", produces = MediaType.APPLICATION_JSON_VALUE)
+    public @ResponseBody String SendNotification(@RequestBody Map<String, String> payload) throws JSONException {
+        String sender = payload.get("sender");
+        String projectId = payload.get("projectId");
+        String messageTitle = payload.get("messageTitle");
+        String messageBody = payload.get("messageBody");
+        String fromURL = payload.get("fromURL");
+        FCMSenderModel sm = new FCMSenderModel();
+        sm.setTitle(messageTitle);
+        sm.setBody(messageBody);
+        sm.setUrl(fromURL);
+        boolean allSuccess = true;
+        //Todo get username by projectId from account management service.
+        Subscriber subscriber = subscriberService.findSubscriberByUsername(sender);
+        Long subscriberId;
+
+        List<Long> tokenIds = new ArrayList<Long>();
+
+        if(subscriber != null){
+            subscriberId = subscriber.getId();
+            List<TokenRelationModel> tokenRelationModel = tokenRelationService.getRelationsBySubscriberId(subscriberId);
+            for (TokenRelationModel trm : tokenRelationModel){
+                if(trm.getLogon() && !tokenIds.contains(trm.getTokenId())){
+                    tokenIds.add(trm.getTokenId());
+                }
+            }
+
+            for (Long tokenId : tokenIds){
+                TokenModel _token = tokenService.getTokenById(tokenId);
+                sm.setToken(_token.getToken());
+                String s = sm.send();
+                if(s == "Success")
+                    allSuccess &= true;
+                else
+                    allSuccess &= false;
+            }
+        }
+        if(allSuccess)
+            return "Success";
+        else
+            return "fail";
+    }
+
+    private List<String> getUserNames(Long projectId){
+        List<String> usernames = new ArrayList<String>();
+        return usernames;
     }
 }
