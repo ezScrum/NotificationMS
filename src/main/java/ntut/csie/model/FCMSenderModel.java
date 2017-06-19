@@ -56,7 +56,7 @@ public class FCMSenderModel {
                 }
                 br.close();
                 JSONObject result = new JSONObject(sb.toString());
-                if(result.get("success") == "1"){
+                if(result.getInt("success") == 1){
                     isSuccess = true;
                 }
             } else {

@@ -129,8 +129,6 @@ public class NotificationController {
     public @ResponseBody String NotifyLogOut(@RequestBody Map<String, String> payload) throws JSONException {
         String username = payload.get("username");
         String tokenString = payload.get("token");
-        System.out.println(username);
-        System.out.println(tokenString);
         Subscriber subscriber = subscriberService.findSubscriberByUsername(username);
         Long subscriberId;
         TokenModel _token = tokenService.getTokenByTokenString(tokenString);
@@ -152,7 +150,8 @@ public class NotificationController {
     @RequestMapping(method = RequestMethod.POST, path ="/send", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody String SendNotification(@RequestBody Map<String, String> payload) throws JSONException {
         String sender = payload.get("sender");
-        String projectId = payload.get("projectId");
+        String receivers = payload.get("receivers");
+        ArrayList<Subscriber> subscribers = getSubscriptReceivers(receivers, sender);
         String messageTitle = payload.get("messageTitle");
         String messageBody = payload.get("messageBody");
         String fromURL = payload.get("fromURL");
@@ -160,8 +159,65 @@ public class NotificationController {
         sm.setTitle(messageTitle);
         sm.setBody(messageBody);
         sm.setUrl(fromURL);
-        boolean allSuccess = true;
+
         //Todo get username by projectId from account management service.
+        boolean allSuccess = SendTestBySender(sender,  sm);
+        if(allSuccess)
+            return "Success";
+        else
+            return "fail";
+    }
+
+    private ArrayList<Subscriber> getSubscriptReceivers(String receivers, String sender){
+        ArrayList<Subscriber> subscribers = new ArrayList<Subscriber>();
+        try{
+            JSONArray jsonArray = new JSONArray(receivers);
+            for(int index = 0;index < jsonArray.length(); index++){
+                if(jsonArray.getString(index) == sender)
+                    continue;
+                Subscriber s = subscriberService.findSubscriberByUsername(jsonArray.getString(index));
+                if(s != null)
+                    subscribers.add(s);
+            }
+        }catch(JSONException e){
+            System.out.println(e);
+            return null;
+        }
+        return subscribers;
+    }
+
+    private boolean Send (List<Long> tokenIds,   FCMSenderModel sm){
+        boolean allSuccess = true;
+        for (Long tokenId : tokenIds){
+            TokenModel _token = tokenService.getTokenById(tokenId);
+            sm.setToken(_token.getToken());
+            String s = sm.send();
+            if(s == "Success")
+                allSuccess &= true;
+            else
+                allSuccess &= false;
+        }
+        return allSuccess;
+    }
+
+    private boolean SendMessage(List<Subscriber> subscribers,  FCMSenderModel sm){
+        boolean allSuccess = true;
+        List<Long> tokenIds = new ArrayList<Long>();
+
+        for(Subscriber subscriber : subscribers){
+            Long subscriberId = subscriber.getId();
+            List<TokenRelationModel> tokenRelationModel = tokenRelationService.getRelationsBySubscriberId(subscriberId);
+            for (TokenRelationModel trm : tokenRelationModel){
+                if(trm.getLogon() && !tokenIds.contains(trm.getTokenId())){
+                    tokenIds.add(trm.getTokenId());
+                }
+            }
+        }
+        return Send(tokenIds, sm);
+    }
+
+    private boolean SendTestBySender(String sender,  FCMSenderModel sm){
+        boolean allSuccess = true;
         Subscriber subscriber = subscriberService.findSubscriberByUsername(sender);
         Long subscriberId;
 
@@ -176,24 +232,8 @@ public class NotificationController {
                 }
             }
 
-            for (Long tokenId : tokenIds){
-                TokenModel _token = tokenService.getTokenById(tokenId);
-                sm.setToken(_token.getToken());
-                String s = sm.send();
-                if(s == "Success")
-                    allSuccess &= true;
-                else
-                    allSuccess &= false;
-            }
+            return Send(tokenIds, sm);
         }
-        if(allSuccess)
-            return "Success";
-        else
-            return "fail";
-    }
-
-    private List<String> getUserNames(Long projectId){
-        List<String> usernames = new ArrayList<String>();
-        return usernames;
+        return false;
     }
 }
