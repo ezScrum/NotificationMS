@@ -150,8 +150,8 @@ public class NotificationController {
     @RequestMapping(method = RequestMethod.POST, path ="/send", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody String SendNotification(@RequestBody Map<String, String> payload) throws JSONException {
         String sender = payload.get("sender");
-        String receivers = payload.get("receivers");
-        ArrayList<Subscriber> subscribers = getSubscriptReceivers(receivers, sender);
+        String receiversId = payload.get("receivers");
+        ArrayList<Subscriber> subscribers = getSubscriptReceivers(receiversId, sender);
         String messageTitle = payload.get("messageTitle");
         String messageBody = payload.get("messageBody");
         String fromURL = payload.get("fromURL");
@@ -161,21 +161,28 @@ public class NotificationController {
         sm.setUrl(fromURL);
 
         //Todo get username by projectId from account management service.
-        boolean allSuccess = SendTestBySender(sender,  sm);
+        //boolean allSuccess = SendTestBySender(sender,  sm);
+        boolean allSuccess = SendMessage(subscribers,sm);
         if(allSuccess)
             return "Success";
         else
             return "fail";
     }
 
-    private ArrayList<Subscriber> getSubscriptReceivers(String receivers, String sender){
+    private ArrayList<Subscriber> getSubscriptReceivers(String receiversId, String sender){
         ArrayList<Subscriber> subscribers = new ArrayList<Subscriber>();
         try{
-            JSONArray jsonArray = new JSONArray(receivers);
-            for(int index = 0;index < jsonArray.length(); index++){
-                if(jsonArray.getString(index) == sender)
+            JSONArray jsonArray = new JSONArray(receiversId);
+            AccMsController accMsController = new AccMsController();
+            accMsController.setAccountId(jsonArray);
+            accMsController.setAccToken("Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTQ5ODc5OTEwMn0.r18R0bF0ZpfIPqTPUu82632T5lGZ-i3AB_Y5V79zl4s");
+            ArrayList<String> receiversName =  accMsController.getReceiversName();
+            if(receiversName == null || receiversName.isEmpty())
+                return null;
+            for(String receiverName:receiversName){
+                if(receiverName == sender)
                     continue;
-                Subscriber s = subscriberService.findSubscriberByUsername(jsonArray.getString(index));
+                Subscriber s = subscriberService.findSubscriberByUsername(receiverName);
                 if(s != null)
                     subscribers.add(s);
             }
@@ -203,7 +210,8 @@ public class NotificationController {
     private boolean SendMessage(List<Subscriber> subscribers,  FCMSenderModel sm){
         boolean allSuccess = true;
         List<Long> tokenIds = new ArrayList<Long>();
-
+        if(subscribers == null || subscribers.isEmpty())
+            return false;
         for(Subscriber subscriber : subscribers){
             Long subscriberId = subscriber.getId();
             List<TokenRelationModel> tokenRelationModel = tokenRelationService.getRelationsBySubscriberId(subscriberId);
