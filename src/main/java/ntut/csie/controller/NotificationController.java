@@ -151,7 +151,8 @@ public class NotificationController {
     public @ResponseBody String SendNotification(@RequestBody Map<String, String> payload) throws JSONException {
         String sender = payload.get("sender");
         String receiversId = payload.get("receivers");
-        ArrayList<Subscriber> subscribers = getSubscriptReceivers(receiversId, sender);
+        String accToken = payload.get("accToken");
+        ArrayList<Subscriber> subscribers = getSubscriptReceivers(receiversId, sender, accToken);
         String messageTitle = payload.get("messageTitle");
         String messageBody = payload.get("messageBody");
         String fromURL = payload.get("fromURL");
@@ -160,7 +161,6 @@ public class NotificationController {
         sm.setBody(messageBody);
         sm.setUrl(fromURL);
 
-        //Todo get username by projectId from account management service.
         //boolean allSuccess = SendTestBySender(sender,  sm);
         boolean allSuccess = SendMessage(subscribers,sm);
         if(allSuccess)
@@ -169,13 +169,13 @@ public class NotificationController {
             return "fail";
     }
 
-    private ArrayList<Subscriber> getSubscriptReceivers(String receiversId, String sender){
+    private ArrayList<Subscriber> getSubscriptReceivers(String receiversId, String sender, String accToken){
         ArrayList<Subscriber> subscribers = new ArrayList<Subscriber>();
         try{
             JSONArray jsonArray = new JSONArray(receiversId);
             AccMsController accMsController = new AccMsController();
             accMsController.setAccountId(jsonArray);
-            accMsController.setAccToken("Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsImV4cCI6MTQ5ODc5OTEwMn0.r18R0bF0ZpfIPqTPUu82632T5lGZ-i3AB_Y5V79zl4s");
+            accMsController.setAccToken(accToken);
             ArrayList<String> receiversName =  accMsController.getReceiversName();
             if(receiversName == null || receiversName.isEmpty())
                 return null;
