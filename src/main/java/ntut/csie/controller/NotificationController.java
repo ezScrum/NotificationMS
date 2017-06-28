@@ -38,7 +38,7 @@ public class NotificationController {
     @Autowired
     private TokenRelationService tokenRelationService;
 
-    @RequestMapping(method = RequestMethod.POST, path ="/subscript", produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(method = RequestMethod.POST, path ="/subscribe", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody String doSubscript(@RequestBody Map<String, String> payload) throws JSONException{
         String username = payload.get("username");
         String tokenString = payload.get("token");
@@ -74,11 +74,15 @@ public class NotificationController {
             tokenRelationModel.setTokenId(tokenId);
             tokenRelationModel.setLogon(true);
             tokenRelationService.save(tokenRelationModel);
+            return "Success";
         }
-        return "Success";
+        else{
+            return "The subscript is exist.";
+        }
+
     }
 
-    @RequestMapping(method = RequestMethod.POST, path ="/unSubscript", produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(method = RequestMethod.POST, path ="/cancelSubscribe", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody String doUnSubscript(@RequestBody Map<String, String> payload) throws JSONException {
         String username = payload.get("username");
         String tokenString = payload.get("token");
@@ -94,10 +98,10 @@ public class NotificationController {
                 tokenRelationService.delete(tokenRelationModel.getId());
                 return "Success";
             }
-            return "fail";
+            return "Cancel subscribe fail.";
         }
         else{
-            return "fail";
+            return "Cancel subscribe fail.";
         }
     }
 
@@ -116,16 +120,16 @@ public class NotificationController {
             if(tokenRelationModel != null){
                 tokenRelationModel.setLogon(true);
                 tokenRelationRepository.save(tokenRelationModel);
-                return "Subscript";
+                return "Subscription";
             }
-            return "UnSubscript";
+            return "No-Subscription";
         }
         else{
-            return "UnSubscript";
+            return "No-Subscription";
         }
     }
 
-    @RequestMapping(method = RequestMethod.POST, path ="/notifyLogOut", produces = MediaType.APPLICATION_JSON_VALUE)
+    @RequestMapping(method = RequestMethod.POST, path ="/notifyLogout", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody String NotifyLogOut(@RequestBody Map<String, String> payload) throws JSONException {
         String username = payload.get("username");
         String tokenString = payload.get("token");
@@ -137,7 +141,6 @@ public class NotificationController {
             subscriberId = subscriber.getId();
             tokenId = _token.getId();
 
-            //ToDo getUsernamesByProjectId
             TokenRelationModel tokenRelationModel = tokenRelationService.getRelation(subscriberId,tokenId);
             if(tokenRelationModel != null){
                 tokenRelationModel.setLogon(false);
@@ -149,39 +152,35 @@ public class NotificationController {
 
     @RequestMapping(method = RequestMethod.POST, path ="/send", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody String SendNotification(@RequestBody Map<String, String> payload) throws JSONException {
-        String sender = payload.get("sender");
-        String receiversId = payload.get("receivers");
-        String accToken = payload.get("accToken");
-        ArrayList<Subscriber> subscribers = getSubscriptReceivers(receiversId, sender, accToken);
-        String messageTitle = payload.get("messageTitle");
-        String messageBody = payload.get("messageBody");
-        String fromURL = payload.get("fromURL");
+        String receivers = payload.get("receivers");
+        ArrayList<Subscriber> subscribers = getSubscriptReceivers(receivers);
+        String messageTitle = payload.get("tittle");
+        String messageBody = payload.get("body");
+        String eventSource = payload.get("eventSource");
         FCMSenderModel sm = new FCMSenderModel();
         sm.setTitle(messageTitle);
         sm.setBody(messageBody);
-        sm.setUrl(fromURL);
+        sm.setUrl(eventSource);
 
         //boolean allSuccess = SendTestBySender(sender,  sm);
         boolean allSuccess = SendMessage(subscribers,sm);
         if(allSuccess)
             return "Success";
         else
-            return "fail";
+            return "Send notification fail.";
     }
 
-    private ArrayList<Subscriber> getSubscriptReceivers(String receiversId, String sender, String accToken){
+    private ArrayList<Subscriber> getSubscriptReceivers(String receivers){
         ArrayList<Subscriber> subscribers = new ArrayList<Subscriber>();
         try{
-            JSONArray jsonArray = new JSONArray(receiversId);
-            AccMsController accMsController = new AccMsController();
-            accMsController.setAccountId(jsonArray);
-            accMsController.setAccToken(accToken);
-            ArrayList<String> receiversName =  accMsController.getReceiversName();
+            JSONArray jsonArray = new JSONArray(receivers);
+            ArrayList<String> receiversName  = new ArrayList<String>();
+            for (int index =0; index < jsonArray.length(); index++){
+                receiversName.add(jsonArray.getString(index));
+            }
             if(receiversName == null || receiversName.isEmpty())
                 return null;
             for(String receiverName:receiversName){
-                if(receiverName == sender)
-                    continue;
                 Subscriber s = subscriberService.findSubscriberByUsername(receiverName);
                 if(s != null)
                     subscribers.add(s);
@@ -193,7 +192,7 @@ public class NotificationController {
         return subscribers;
     }
 
-    private boolean Send (List<Long> tokenIds,   FCMSenderModel sm){
+    private boolean Send (List<Long> tokenIds, FCMSenderModel sm){
         boolean allSuccess = true;
         for (Long tokenId : tokenIds){
             TokenModel _token = tokenService.getTokenById(tokenId);
@@ -208,7 +207,6 @@ public class NotificationController {
     }
 
     private boolean SendMessage(List<Subscriber> subscribers,  FCMSenderModel sm){
-        boolean allSuccess = true;
         List<Long> tokenIds = new ArrayList<Long>();
         if(subscribers == null || subscribers.isEmpty())
             return false;
