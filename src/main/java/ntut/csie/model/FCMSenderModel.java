@@ -63,7 +63,6 @@ public class FCMSenderModel {
                 System.out.println(connection.getResponseMessage());
                 isSuccess = false;
             }
-
         }catch (Exception e){
             System.out.println(e);
             isSuccess = false;

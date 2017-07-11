@@ -178,7 +178,7 @@ public class NotificationController {
             for (int index =0; index < jsonArray.length(); index++){
                 receiversName.add(jsonArray.getString(index));
             }
-            if(receiversName == null || receiversName.isEmpty())
+            if(receiversName.isEmpty())
                 return null;
             for(String receiverName:receiversName){
                 Subscriber s = subscriberService.findSubscriberByUsername(receiverName);
@@ -197,17 +197,18 @@ public class NotificationController {
         for (Long tokenId : tokenIds){
             TokenModel _token = tokenService.getTokenById(tokenId);
 
-            //AT used
             if(_token.getToken().contains("TestToken")){
-                return true;
-            }
-
-            sm.setToken(_token.getToken());
-            String s = sm.send();
-            if(s == "Success")
+                //For test
                 allSuccess &= true;
-            else
-                allSuccess &= false;
+            }
+            else{
+                sm.setToken(_token.getToken());
+                String s = sm.send();
+                if(s.contains("Success"))
+                    allSuccess &= true;
+                else
+                    allSuccess &= false;
+            }
         }
         return allSuccess;
     }
@@ -226,26 +227,5 @@ public class NotificationController {
             }
         }
         return Send(tokenIds, sm);
-    }
-
-    private boolean SendTestBySender(String sender,  FCMSenderModel sm){
-        boolean allSuccess = true;
-        Subscriber subscriber = subscriberService.findSubscriberByUsername(sender);
-        Long subscriberId;
-
-        List<Long> tokenIds = new ArrayList<Long>();
-
-        if(subscriber != null){
-            subscriberId = subscriber.getId();
-            List<TokenRelationModel> tokenRelationModel = tokenRelationService.getRelationsBySubscriberId(subscriberId);
-            for (TokenRelationModel trm : tokenRelationModel){
-                if(trm.getLogon() && !tokenIds.contains(trm.getTokenId())){
-                    tokenIds.add(trm.getTokenId());
-                }
-            }
-
-            return Send(tokenIds, sm);
-        }
-        return false;
     }
 }
