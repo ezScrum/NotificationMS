@@ -31,13 +31,4 @@ public class TokenModel {
     public void setToken(String token){
         this.token = token;
     }
-
-//    @ManyToMany(mappedBy = "tokens")
-//    public Set<Subscriber> getSubscribers(){
-//        return subscribers;
-//    }
-//
-//    public void setSubscriber(Set<Subscriber> subscribers){
-//        this.subscribers = subscribers;
-//    }
 }

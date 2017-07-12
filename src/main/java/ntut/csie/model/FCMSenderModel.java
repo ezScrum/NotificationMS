@@ -10,12 +10,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 public class FCMSenderModel {
-    public FCMSenderModel(String token, String title, String body, String jumpUrl){
-        this.token = token;
-        this.title = title;
-        this.body = body;
-        this.jumpUrl = jumpUrl;
-    }
 
     public FCMSenderModel(){
     }
@@ -24,11 +18,17 @@ public class FCMSenderModel {
     private String body;
     private String jumpUrl;
     private String token;
+    private String response;
 
     public void setToken(String token){this.token = token;}
+    public String getToken(){return token;}
     public void setTitle(String title){this.title = title;}
+    public String getTitle(){return title;}
     public void setBody(String body){this.body = body;}
+    public String getBody(){return body;}
     public void setUrl(String jumpUrl){this.jumpUrl = jumpUrl;}
+    public String getUrl(){return jumpUrl;}
+    public String getResponse(){return response;}
 
     public String send(){
         boolean isSuccess = false;
@@ -55,6 +55,7 @@ public class FCMSenderModel {
                     sb.append(line + "\n");
                 }
                 br.close();
+                response = sb.toString();
                 JSONObject result = new JSONObject(sb.toString());
                 if(result.getInt("success") == 1){
                     isSuccess = true;

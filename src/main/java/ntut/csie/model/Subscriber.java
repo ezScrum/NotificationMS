@@ -31,15 +31,4 @@ public class Subscriber {
     public void setUsername(String username){
         this.username = username;
     }
-
-//    @ManyToMany(cascade = CascadeType.ALL)
-//    @JoinTable(name = "token_relation", joinColumns = @JoinColumn(name = "subscriber_id", referencedColumnName = "id"),
-//            inverseJoinColumns = @JoinColumn(name = "token_id", referencedColumnName = "id"))
-//    public Set<TokenModel> getTokens() {
-//        return tokens;
-//    }
-//
-//    public void setTokens(Set<TokenModel> tokens) {
-//        this.tokens = tokens;
-//    }
 }
