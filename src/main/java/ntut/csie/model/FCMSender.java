@@ -3,9 +3,12 @@ package ntut.csie.model;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Properties;
+import java.io.FileInputStream;
 import java.io.OutputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -32,6 +35,13 @@ public class FCMSender {
 
     public String send(){
         boolean isSuccess = false;
+        Properties properties = new Properties();
+        try{
+            properties.load(new FileInputStream("./FCMService.ini"));
+        }catch (IOException e){
+            System.out.println(e);
+        }
+        String serverKey = "key=" + properties.getProperty("serverKey");
         HttpURLConnection connection = null;
         try{
             JSONObject parent = buildMessage();
@@ -41,7 +51,7 @@ public class FCMSender {
             connection.setDoOutput(true );
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type","application/json");
-            connection.setRequestProperty("Authorization","key=AAAALeDdRM4:APA91bHDg36wwcKhafIlP4A6eRpzFtqTL0MvjOQPYicW1wnoVClieKmGZeRNKABkqG3e4We0cGXnDBJ_zD2lWMI6BhFLL_NRlXmpYm8oZux5IoKiGauN7K9YJhc__xI4cW-BXl6AKlwd");
+            connection.setRequestProperty("Authorization",serverKey);
             OutputStream wr = connection.getOutputStream();
             wr.write(parent.toString().getBytes("UTF-8"));
             wr.close();
