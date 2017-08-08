@@ -10,33 +10,31 @@ import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.*;
-
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class FCMSenderModelTest {
-    private FCMSenderModel fcmSenderModel = new FCMSenderModel();
+public class FCMSenderTest {
+    private FCMSender fcmSender = new FCMSender();
 
     @After
     public void teardown(){
-        fcmSenderModel = new FCMSenderModel();
+        fcmSender = new FCMSender();
     }
 
     @Test
     public void TestFCMSenderModel(){
-        fcmSenderModel.setTitle("title");
-        fcmSenderModel.setBody("body");
-        fcmSenderModel.setUrl("url");
-        fcmSenderModel.setToken("token");
+        fcmSender.setTitle("title");
+        fcmSender.setBody("body");
+        fcmSender.setUrl("url");
+        fcmSender.setToken("token");
 
-        Assert.assertEquals("title", fcmSenderModel.getTitle());
-        Assert.assertEquals("body", fcmSenderModel.getBody());
-        Assert.assertEquals("url", fcmSenderModel.getUrl());
-        Assert.assertEquals("token", fcmSenderModel.getToken());
+        Assert.assertEquals("title", fcmSender.getTitle());
+        Assert.assertEquals("body", fcmSender.getBody());
+        Assert.assertEquals("url", fcmSender.getUrl());
+        Assert.assertEquals("token", fcmSender.getToken());
 
-        String s = fcmSenderModel.send();
+        String s = fcmSender.send();
         Assert.assertEquals("Fail", s);
-        String response = fcmSenderModel.getResponse();
+        String response = fcmSender.getResponse();
         try{
             JSONObject result = new JSONObject(response.toString());
             Assert.assertEquals(false, result.getBoolean("success"));

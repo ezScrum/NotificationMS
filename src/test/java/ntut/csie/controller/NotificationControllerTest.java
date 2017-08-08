@@ -1,7 +1,7 @@
 package ntut.csie.controller;
 
 import ntut.csie.service.*;
-import ntut.csie.model.Subscriber;
+import ntut.csie.model.SubscriberModel;
 import ntut.csie.model.TokenModel;
 import ntut.csie.model.TokenRelationModel;
 import ntut.csie.repository.*;
@@ -46,16 +46,16 @@ public class NotificationControllerTest {
 
     @Before
     public void setup(){
-        Subscriber subscriber = new Subscriber();
-        subscriber.setUsername("Test_1");
-        subscriberService.save(subscriber);
+        SubscriberModel subscriberModel = new SubscriberModel();
+        subscriberModel.setUsername("Test_1");
+        subscriberService.save(subscriberModel);
 
         TokenModel tokenModel = new TokenModel();
         tokenModel.setToken("testToken_1");
         tokenService.save(tokenModel);
 
         TokenRelationModel trm = new TokenRelationModel();
-        Subscriber s = subscriberService.findSubscriberByUsername("Test_1");
+        SubscriberModel s = subscriberService.findSubscriberByUsername("Test_1");
         TokenModel tm = tokenService.getTokenByTokenString("testToken_1");
         trm.setSubscriberId(s.getId());
         trm.setTokenId(tm.getId());
@@ -84,13 +84,13 @@ public class NotificationControllerTest {
                 .when().post("/notify/subscribe")
                 .andReturn().asString();
 
-        Subscriber subscriber = subscriberService.findSubscriberByUsername("Test_2");
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername("Test_2");
         TokenModel tokenModel = tokenService.getTokenByTokenString("testToken_2");
 
-        Assert.assertNotNull(subscriber);
+        Assert.assertNotNull(subscriberModel);
         Assert.assertNotNull(tokenModel);
 
-        TokenRelationModel trm = tokenRelationService.getRelation(subscriber.getId(), tokenModel.getId());
+        TokenRelationModel trm = tokenRelationService.getRelation(subscriberModel.getId(), tokenModel.getId());
         Assert.assertNotNull(trm);
         Assert.assertTrue(trm.getLogon());
         Assert.assertEquals("Success",response);
@@ -112,18 +112,18 @@ public class NotificationControllerTest {
 
         Assert.assertEquals("Success",response);
 
-        Subscriber subscriber = subscriberService.findSubscriberByUsername("Test_1");
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername("Test_1");
         TokenModel tokenModel = tokenService.getTokenByTokenString("testToken_2");
-        Assert.assertNotNull(subscriber);
+        Assert.assertNotNull(subscriberModel);
         Assert.assertNotNull(tokenModel);
 
-        TokenRelationModel trm = tokenRelationService.getRelation(subscriber.getId(), tokenModel.getId());
+        TokenRelationModel trm = tokenRelationService.getRelation(subscriberModel.getId(), tokenModel.getId());
         Assert.assertNotNull(trm);
         Assert.assertTrue(trm.getLogon());
 
         tokenModel = tokenService.getTokenByTokenString("testToken_1");
         Assert.assertNotNull(tokenModel);
-        trm = tokenRelationService.getRelation(subscriber.getId(), tokenModel.getId());
+        trm = tokenRelationService.getRelation(subscriberModel.getId(), tokenModel.getId());
         Assert.assertNotNull(trm);
         Assert.assertFalse(trm.getLogon());
     }
@@ -144,18 +144,18 @@ public class NotificationControllerTest {
 
         Assert.assertEquals("Success",response);
 
-        Subscriber subscriber = subscriberService.findSubscriberByUsername("Test_2");
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername("Test_2");
         TokenModel tokenModel = tokenService.getTokenByTokenString("testToken_1");
-        Assert.assertNotNull(subscriber);
+        Assert.assertNotNull(subscriberModel);
         Assert.assertNotNull(tokenModel);
 
-        TokenRelationModel trm = tokenRelationService.getRelation(subscriber.getId(), tokenModel.getId());
+        TokenRelationModel trm = tokenRelationService.getRelation(subscriberModel.getId(), tokenModel.getId());
         Assert.assertNotNull(trm);
         Assert.assertTrue(trm.getLogon());
 
-        subscriber = subscriberService.findSubscriberByUsername("Test_1");
-        Assert.assertNotNull(subscriber);
-        trm = tokenRelationService.getRelation(subscriber.getId(), tokenModel.getId());
+        subscriberModel = subscriberService.findSubscriberByUsername("Test_1");
+        Assert.assertNotNull(subscriberModel);
+        trm = tokenRelationService.getRelation(subscriberModel.getId(), tokenModel.getId());
         Assert.assertNotNull(trm);
         Assert.assertFalse(trm.getLogon());
     }
@@ -191,13 +191,13 @@ public class NotificationControllerTest {
                 .when().post("/notify/cancelSubscribe")
                 .andReturn().asString();
 
-        Subscriber subscriber = subscriberService.findSubscriberByUsername("Test_1");
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername("Test_1");
         TokenModel tokenModel = tokenService.getTokenByTokenString("testToken_1");
 
-        Assert.assertNotNull(subscriber);
+        Assert.assertNotNull(subscriberModel);
         Assert.assertNotNull(tokenModel);
 
-        TokenRelationModel trm = tokenRelationService.getRelation(subscriber.getId(), tokenModel.getId());
+        TokenRelationModel trm = tokenRelationService.getRelation(subscriberModel.getId(), tokenModel.getId());
         Assert.assertNull(trm);
         Assert.assertEquals("Success",response);
     }
@@ -232,17 +232,17 @@ public class NotificationControllerTest {
 
         Assert.assertEquals("Success",response);
 
-        Subscriber subscriber = subscriberService.findSubscriberByUsername("Test_1");
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername("Test_1");
         TokenModel tokenModel = tokenService.getTokenByTokenString("testToken_2");
-        Assert.assertNotNull(subscriber);
+        Assert.assertNotNull(subscriberModel);
         Assert.assertNotNull(tokenModel);
-        TokenRelationModel trm = tokenRelationService.getRelation(subscriber.getId(), tokenModel.getId());
+        TokenRelationModel trm = tokenRelationService.getRelation(subscriberModel.getId(), tokenModel.getId());
         Assert.assertNull(trm);
-        subscriber = subscriberService.findSubscriberByUsername("Test_2");
+        subscriberModel = subscriberService.findSubscriberByUsername("Test_2");
         tokenModel = tokenService.getTokenByTokenString("testToken_1");
-        Assert.assertNotNull(subscriber);
+        Assert.assertNotNull(subscriberModel);
         Assert.assertNotNull(tokenModel);
-        trm = tokenRelationService.getRelation(subscriber.getId(), tokenModel.getId());
+        trm = tokenRelationService.getRelation(subscriberModel.getId(), tokenModel.getId());
         Assert.assertNull(trm);
 
         JSONObject checkJson2 = new JSONObject();
@@ -273,12 +273,12 @@ public class NotificationControllerTest {
                 .when().post("/notify/notifyLogon")
                 .andReturn().asString();
 
-        Subscriber subscriber = subscriberService.findSubscriberByUsername("Test_1");
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername("Test_1");
         TokenModel tokenModel = tokenService.getTokenByTokenString("testToken_1");
 
-        Assert.assertNotNull(subscriber);
+        Assert.assertNotNull(subscriberModel);
         Assert.assertNotNull(tokenModel);
-        TokenRelationModel trm = tokenRelationService.getRelation(subscriber.getId(), tokenModel.getId());
+        TokenRelationModel trm = tokenRelationService.getRelation(subscriberModel.getId(), tokenModel.getId());
         Assert.assertNotNull(trm);
         Assert.assertTrue(trm.getLogon());
         Assert.assertEquals("Subscription",response);
@@ -299,10 +299,10 @@ public class NotificationControllerTest {
                 .andReturn().asString();
 
         Assert.assertEquals("No-Subscription",response);
-        Subscriber subscriber = subscriberService.findSubscriberByUsername("Test_2");
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername("Test_2");
         TokenModel tokenModel = tokenService.getTokenByTokenString("testToken_2");
 
-        Assert.assertNull(subscriber);
+        Assert.assertNull(subscriberModel);
         Assert.assertNull(tokenModel);
     }
 
@@ -320,11 +320,11 @@ public class NotificationControllerTest {
                 .when().post("/notify/subscribe")
                 .andReturn().asString();
         Assert.assertEquals("Success",response);
-        Subscriber subscriber = subscriberService.findSubscriberByUsername("Test_2");
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername("Test_2");
         TokenModel tokenModel = tokenService.getTokenByTokenString("testToken_2");
-        Assert.assertNotNull(subscriber);
+        Assert.assertNotNull(subscriberModel);
         Assert.assertNotNull(tokenModel);
-        TokenRelationModel trm = tokenRelationService.getRelation(subscriber.getId(), tokenModel.getId());
+        TokenRelationModel trm = tokenRelationService.getRelation(subscriberModel.getId(), tokenModel.getId());
         Assert.assertNotNull(trm);
         Assert.assertTrue(trm.getLogon());
 
@@ -366,9 +366,9 @@ public class NotificationControllerTest {
                 .body(json.toString())
                 .when().post("/notify/notifyLogon");
 
-        Subscriber subscriber = subscriberService.findSubscriberByUsername("Test_1");
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername("Test_1");
         TokenModel tokenModel = tokenService.getTokenByTokenString("testToken_1");
-        TokenRelationModel trm = tokenRelationService.getRelation(subscriber.getId(), tokenModel.getId());
+        TokenRelationModel trm = tokenRelationService.getRelation(subscriberModel.getId(), tokenModel.getId());
 
         Assert.assertNotNull(trm);
         Assert.assertTrue(trm.getLogon());
@@ -377,7 +377,7 @@ public class NotificationControllerTest {
                 .body(json.toString())
                 .when().post("/notify/notifyLogout");
 
-        trm = tokenRelationService.getRelation(subscriber.getId(), tokenModel.getId());
+        trm = tokenRelationService.getRelation(subscriberModel.getId(), tokenModel.getId());
         Assert.assertNotNull(trm);
         Assert.assertFalse(trm.getLogon());
     }

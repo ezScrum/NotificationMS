@@ -7,24 +7,22 @@ import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.junit.Assert.*;
-
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class SubscriberTest {
-    private Subscriber subscriber = new Subscriber();
+public class SubscriberModelTest {
+    private SubscriberModel subscriberModel = new SubscriberModel();
 
     @After
     public void teardown(){
-        subscriber = new Subscriber();
+        subscriberModel = new SubscriberModel();
     }
 
     @Test
     public void TestSubscriber(){
-        subscriber.setUsername("user_1");
-        Assert.assertEquals("user_1", subscriber.getUsername());
+        subscriberModel.setUsername("user_1");
+        Assert.assertEquals("user_1", subscriberModel.getUsername());
         Long id = Integer.toUnsignedLong(1);
-        subscriber.setId(id);
-        Assert.assertEquals(Integer.toUnsignedLong(1), subscriber.getId().longValue());
+        subscriberModel.setId(id);
+        Assert.assertEquals(Integer.toUnsignedLong(1), subscriberModel.getId().longValue());
     }
 }

@@ -11,7 +11,6 @@ import org.springframework.http.MediaType;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -42,16 +41,16 @@ public class NotificationController {
     public @ResponseBody String doSubscript(@RequestBody Map<String, String> payload) throws JSONException{
         String username = payload.get("username");
         String tokenString = payload.get("token");
-        //Subscriber
-        Subscriber subscriber = subscriberService.findSubscriberByUsername(username);
+        //SubscriberModel
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername(username);
         Long subscriberId;
-        if(subscriber == null){
-            subscriber = new Subscriber();
-            subscriber.setUsername(username);
-            subscriberId = subscriberService.save(subscriber).getId();
+        if(subscriberModel == null){
+            subscriberModel = new SubscriberModel();
+            subscriberModel.setUsername(username);
+            subscriberId = subscriberService.save(subscriberModel).getId();
         }
         else{
-            subscriberId = subscriber.getId();
+            subscriberId = subscriberModel.getId();
         }
 
         //Token
@@ -86,12 +85,12 @@ public class NotificationController {
     public @ResponseBody String doUnSubscript(@RequestBody Map<String, String> payload) throws JSONException {
         String username = payload.get("username");
         String tokenString = payload.get("token");
-        Subscriber subscriber = subscriberService.findSubscriberByUsername(username);
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername(username);
         Long subscriberId;
         TokenModel _token = tokenService.getTokenByTokenString(tokenString);
         Long tokenId;
-        if(subscriber != null && _token != null){
-            subscriberId = subscriber.getId();
+        if(subscriberModel != null && _token != null){
+            subscriberId = subscriberModel.getId();
             tokenId = _token.getId();
             TokenRelationModel tokenRelationModel = tokenRelationService.getRelation(subscriberId,tokenId);
             if(tokenRelationModel != null){
@@ -109,12 +108,12 @@ public class NotificationController {
     public @ResponseBody String NotifyLogon(@RequestBody Map<String, String> payload) throws JSONException {
         String username = payload.get("username");
         String tokenString = payload.get("token");
-        Subscriber subscriber = subscriberService.findSubscriberByUsername(username);
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername(username);
         Long subscriberId;
         TokenModel _token = tokenService.getTokenByTokenString(tokenString);
         Long tokenId;
-        if(subscriber != null && _token != null){
-            subscriberId = subscriber.getId();
+        if(subscriberModel != null && _token != null){
+            subscriberId = subscriberModel.getId();
             tokenId = _token.getId();
             TokenRelationModel tokenRelationModel = tokenRelationService.getRelation(subscriberId,tokenId);
             if(tokenRelationModel != null){
@@ -133,12 +132,12 @@ public class NotificationController {
     public @ResponseBody String NotifyLogOut(@RequestBody Map<String, String> payload) throws JSONException {
         String username = payload.get("username");
         String tokenString = payload.get("token");
-        Subscriber subscriber = subscriberService.findSubscriberByUsername(username);
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername(username);
         Long subscriberId;
         TokenModel _token = tokenService.getTokenByTokenString(tokenString);
         Long tokenId;
-        if(subscriber != null && _token != null){
-            subscriberId = subscriber.getId();
+        if(subscriberModel != null && _token != null){
+            subscriberId = subscriberModel.getId();
             tokenId = _token.getId();
 
             TokenRelationModel tokenRelationModel = tokenRelationService.getRelation(subscriberId,tokenId);
@@ -153,25 +152,25 @@ public class NotificationController {
     @RequestMapping(method = RequestMethod.POST, path ="/send", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody String SendNotification(@RequestBody Map<String, String> payload) throws JSONException {
         String receivers = payload.get("receivers");
-        ArrayList<Subscriber> subscribers = getSubscriptReceivers(receivers);
+        ArrayList<SubscriberModel> subscriberModels = getSubscriptReceivers(receivers);
         String messageTitle = payload.get("tittle");
         String messageBody = payload.get("body");
         String eventSource = payload.get("eventSource");
-        FCMSenderModel sm = new FCMSenderModel();
+        FCMSender sm = new FCMSender();
         sm.setTitle(messageTitle);
         sm.setBody(messageBody);
         sm.setUrl(eventSource);
 
         //boolean allSuccess = SendTestBySender(sender,  sm);
-        boolean allSuccess = SendMessage(subscribers,sm);
+        boolean allSuccess = SendMessage(subscriberModels,sm);
         if(allSuccess)
             return "Success";
         else
             return "Send notification fail.";
     }
 
-    private ArrayList<Subscriber> getSubscriptReceivers(String receivers){
-        ArrayList<Subscriber> subscribers = new ArrayList<Subscriber>();
+    private ArrayList<SubscriberModel> getSubscriptReceivers(String receivers){
+        ArrayList<SubscriberModel> subscriberModels = new ArrayList<SubscriberModel>();
         try{
             JSONArray jsonArray = new JSONArray(receivers);
             ArrayList<String> receiversName  = new ArrayList<String>();
@@ -181,18 +180,18 @@ public class NotificationController {
             if(receiversName.isEmpty())
                 return null;
             for(String receiverName:receiversName){
-                Subscriber s = subscriberService.findSubscriberByUsername(receiverName);
+                SubscriberModel s = subscriberService.findSubscriberByUsername(receiverName);
                 if(s != null)
-                    subscribers.add(s);
+                    subscriberModels.add(s);
             }
         }catch(JSONException e){
             System.out.println(e);
             return null;
         }
-        return subscribers;
+        return subscriberModels;
     }
 
-    private boolean Send (List<Long> tokenIds, FCMSenderModel sm){
+    private boolean Send (List<Long> tokenIds, FCMSender sm){
         boolean allSuccess = true;
         for (Long tokenId : tokenIds){
             TokenModel _token = tokenService.getTokenById(tokenId);
@@ -213,12 +212,12 @@ public class NotificationController {
         return allSuccess;
     }
 
-    private boolean SendMessage(List<Subscriber> subscribers,  FCMSenderModel sm){
+    private boolean SendMessage(List<SubscriberModel> subscriberModels, FCMSender sm){
         List<Long> tokenIds = new ArrayList<Long>();
-        if(subscribers == null || subscribers.isEmpty())
+        if(subscriberModels == null || subscriberModels.isEmpty())
             return false;
-        for(Subscriber subscriber : subscribers){
-            Long subscriberId = subscriber.getId();
+        for(SubscriberModel subscriberModel : subscriberModels){
+            Long subscriberId = subscriberModel.getId();
             List<TokenRelationModel> tokenRelationModel = tokenRelationService.getRelationsBySubscriberId(subscriberId);
             for (TokenRelationModel trm : tokenRelationModel){
                 if(trm.getLogon() && !tokenIds.contains(trm.getTokenId())){

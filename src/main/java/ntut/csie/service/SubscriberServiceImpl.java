@@ -1,6 +1,6 @@
 package ntut.csie.service;
 
-import ntut.csie.model.Subscriber;
+import ntut.csie.model.SubscriberModel;
 import ntut.csie.repository.SubscriberRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,12 +13,12 @@ public class SubscriberServiceImpl implements SubscriberService{
     private SubscriberRepository subscriberRepository;
 
     @Override
-    public Subscriber findSubscriberByUsername(String username) {
+    public SubscriberModel findSubscriberByUsername(String username) {
         return subscriberRepository.findSubscriberByUsername(username);
     }
 
     @Override
-    public List<Subscriber> getSubscriberList() {
+    public List<SubscriberModel> getSubscriberList() {
         return subscriberRepository.findAll();
     }
 
@@ -28,15 +28,15 @@ public class SubscriberServiceImpl implements SubscriberService{
     }
 
     @Override
-    public Subscriber save(Subscriber subscriber) {
-        Subscriber sub = new Subscriber();
-        sub.setUsername(subscriber.getUsername());
+    public SubscriberModel save(SubscriberModel subscriberModel) {
+        SubscriberModel sub = new SubscriberModel();
+        sub.setUsername(subscriberModel.getUsername());
 
         return subscriberRepository.save(sub);
     }
 
     @Override
-    public Subscriber findUserById(Long id) {
+    public SubscriberModel findUserById(Long id) {
         return subscriberRepository.findOne(id);
     }
 }

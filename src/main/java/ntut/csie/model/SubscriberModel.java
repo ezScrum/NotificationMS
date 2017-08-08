@@ -6,7 +6,7 @@ import javax.persistence.*;
 import java.util.Set;
 
 @Entity
-public class Subscriber {
+public class SubscriberModel {
     @Id
     @GeneratedValue(strategy= GenerationType.AUTO)
     private Long id;

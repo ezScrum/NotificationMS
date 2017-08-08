@@ -11,7 +11,7 @@ public class TokenModel {
     @GeneratedValue(strategy= GenerationType.AUTO)
     private Long id;
 
-//    private Set<Subscriber> subscribers;
+//    private Set<SubscriberModel> subscribers;
 
     @NotBlank
     private String token;
