@@ -117,20 +117,28 @@ public class NotificationController {
         Long subscriberId;
         TokenModel _token = tokenService.getTokenByTokenString(tokenString);
         Long tokenId;
-        if(subscriberModel != null && _token != null){
+        String status ="No-Subscription";
+        String Subscriberfilter = "";
+        if(subscriberModel != null){
             subscriberId = subscriberModel.getId();
-            tokenId = _token.getId();
-            TokenRelationModel tokenRelationModel = tokenRelationService.getRelation(subscriberId,tokenId);
-            if(tokenRelationModel != null){
-                tokenRelationModel.setLogon(true);
-                tokenRelationRepository.save(tokenRelationModel);
-                return "Subscription";
+            if(_token != null){
+                tokenId = _token.getId();
+                TokenRelationModel tokenRelationModel = tokenRelationService.getRelation(subscriberId,tokenId);
+                if(tokenRelationModel != null){
+                    tokenRelationModel.setLogon(true);
+                    tokenRelationRepository.save(tokenRelationModel);
+                    status =  "Subscription";
+                }
             }
-            return "No-Subscription";
+            FilterModel filterModel = filterService.findBySubscriberId(subscriberId);
+            if(filterModel != null){
+                Subscriberfilter = filterModel.getFilter();
+            }
         }
-        else{
-            return "No-Subscription";
-        }
+        JSONObject request = new JSONObject();
+        request.put("status",status);
+        request.put("messagefilter",Subscriberfilter);
+        return request.toString();
     }
 
     @RequestMapping(method = RequestMethod.POST, path ="/notifyLogout", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -271,9 +279,9 @@ public class NotificationController {
             JSONObject filterById;
             for(int index = 0; index < filters.length();index++){
                 JSONObject indexOfFilters = filters.getJSONObject(index);
-                if(indexOfFilters.getLong("Id") == filter.getLong("Id")
-                        && indexOfFilters.getBoolean("subscribe")){
-                    if(filter.getString("event") == null)
+                if(indexOfFilters.getString("Id").equals(filter.getString("Id"))
+                        && indexOfFilters.getBoolean("Subscribe")){
+                    if(indexOfFilters.getJSONObject("event").length() == 0)
                         return true;
                     else{
                         return indexOfFilters.getJSONObject("event").getBoolean(filter.getString("event"));
