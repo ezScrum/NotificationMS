@@ -3,8 +3,12 @@ package ntut.csie.service;
 
 import ntut.csie.model.FilterModel;
 import ntut.csie.repository.FilterRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
+@Service
 public class FilterServiceImpl implements FilterService{
+    @Autowired
     FilterRepository filterRepository;
 
     @Override

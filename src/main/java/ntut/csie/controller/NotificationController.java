@@ -1,6 +1,7 @@
 package ntut.csie.controller;
 
 import ntut.csie.repository.TokenRelationRepository;
+import org.json.JSONObject;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,6 +21,7 @@ import ntut.csie.model.*;
 import ntut.csie.service.SubscriberService;
 import ntut.csie.service.TokenService;
 import ntut.csie.service.TokenRelationService;
+import ntut.csie.service.FilterService;
 
 
 @RestController
@@ -36,6 +38,9 @@ public class NotificationController {
 
     @Autowired
     private TokenRelationService tokenRelationService;
+
+    @Autowired
+    private FilterService filterService;
 
     @RequestMapping(method = RequestMethod.POST, path ="/subscribe", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody String doSubscript(@RequestBody Map<String, String> payload) throws JSONException{
@@ -152,7 +157,8 @@ public class NotificationController {
     @RequestMapping(method = RequestMethod.POST, path ="/send", produces = MediaType.APPLICATION_JSON_VALUE)
     public @ResponseBody String SendNotification(@RequestBody Map<String, String> payload) throws JSONException {
         String receivers = payload.get("receivers");
-        ArrayList<SubscriberModel> subscriberModels = getSubscriptReceivers(receivers);
+        JSONObject filter = new JSONObject(payload.get("filter"));
+        ArrayList<SubscriberModel> subscriberModels = getSubscriptReceivers(receivers,filter);
         String messageTitle = payload.get("tittle");
         String messageBody = payload.get("body");
         String eventSource = payload.get("eventSource");
@@ -169,7 +175,31 @@ public class NotificationController {
             return "Send notification fail.";
     }
 
-    private ArrayList<SubscriberModel> getSubscriptReceivers(String receivers){
+    @RequestMapping(method = RequestMethod.POST, path ="/updateFilter", produces = MediaType.APPLICATION_JSON_VALUE)
+    public @ResponseBody String updateFilter(@RequestBody Map<String, String> payload) throws JSONException{
+        String username = payload.get("username");
+        String filter = payload.get("filter");
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername(username);
+        Long subscriberId;
+        if(subscriberModel!=null){
+            subscriberId = subscriberModel.getId();
+            FilterModel filterModel = filterService.findBySubscriberId(subscriberId);
+            if(filterModel != null){
+                filterModel.setFilter(filter);
+                filterService.update(filterModel);
+            }
+            else {
+                filterModel = new FilterModel();
+                filterModel.setSubscriberId(subscriberId);
+                filterModel.setFilter(filter);
+                filterService.save(filterModel);
+            }
+            return "Success";
+        }
+        return "Never subscribed";
+    }
+
+    private ArrayList<SubscriberModel> getSubscriptReceivers(String receivers, JSONObject filter){
         ArrayList<SubscriberModel> subscriberModels = new ArrayList<SubscriberModel>();
         try{
             JSONArray jsonArray = new JSONArray(receivers);
@@ -181,8 +211,16 @@ public class NotificationController {
                 return null;
             for(String receiverName:receiversName){
                 SubscriberModel s = subscriberService.findSubscriberByUsername(receiverName);
-                if(s != null)
-                    subscriberModels.add(s);
+                if(s != null){
+                    FilterModel filterModel = filterService.findBySubscriberId(s.getId());
+                    if(filterModel == null)
+                        subscriberModels.add(s);
+                    else {
+                        JSONObject filterBySubscriber = new JSONObject(filterModel.getFilter());
+                        if(canSend(filterBySubscriber, filter))
+                            subscriberModels.add(s);
+                    }
+                }
             }
         }catch(JSONException e){
             System.out.println(e);
@@ -226,5 +264,23 @@ public class NotificationController {
             }
         }
         return Send(tokenIds, sm);
+    }
+    private boolean canSend(JSONObject subscriberFilter, JSONObject filter) throws JSONException{
+        JSONArray filters = subscriberFilter.getJSONArray(filter.getString("From"));
+        if(filters != null && filters.length() > 0){
+            JSONObject filterById;
+            for(int index = 0; index < filters.length();index++){
+                JSONObject indexOfFilters = filters.getJSONObject(index);
+                if(indexOfFilters.getLong("Id") == filter.getLong("Id")
+                        && indexOfFilters.getBoolean("subscribe")){
+                    if(filter.getString("event") == null)
+                        return true;
+                    else{
+                        return indexOfFilters.getJSONObject("event").getBoolean(filter.getString("event"));
+                    }
+                }
+            }
+        }
+        return false;
     }
 }
