@@ -1,5 +1,6 @@
 package ntut.csie.controller;
 
+import ntut.csie.model.FilterModel;
 import ntut.csie.service.*;
 import ntut.csie.model.SubscriberModel;
 import ntut.csie.model.TokenModel;
@@ -36,6 +37,9 @@ public class NotificationControllerTest {
     private TokenRelationService tokenRelationService;
 
     @Autowired
+    private FilterService filterService;
+
+    @Autowired
     private SubscriberRepository subscriberRepository;
 
     @Autowired
@@ -43,6 +47,9 @@ public class NotificationControllerTest {
 
     @Autowired
     private  TokenRelationRepository tokenRelationRepository;
+
+    @Autowired
+    private FilterRepository filterRepository;
 
     @Before
     public void setup(){
@@ -281,7 +288,58 @@ public class NotificationControllerTest {
         TokenRelationModel trm = tokenRelationService.getRelation(subscriberModel.getId(), tokenModel.getId());
         Assert.assertNotNull(trm);
         Assert.assertTrue(trm.getLogon());
-        Assert.assertEquals("Subscription",response);
+        try{
+            JSONObject responseJSON = new JSONObject(response) ;
+            Assert.assertEquals("Subscription",responseJSON.getString("status"));
+            Assert.assertEquals("",responseJSON.getString("messagefilter"));
+        }catch(JSONException e){}
+    }
+
+    @Test
+    public void TestNotifyLogin_HaveFilter(){
+        String s ="";
+        JSONObject filter = new JSONObject();
+        try{
+            JSONArray projects = new JSONArray();
+            JSONObject projectFilter = new JSONObject();
+            projectFilter.put("Id","project1");
+            projectFilter.put("Subscribe",true);
+            projectFilter.put("event",new JSONObject());
+            projects.put(projectFilter);
+            filter.put("ezScrum",projects);
+            s = filter.toString();
+        }catch(JSONException e){}
+
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername("Test_1");
+        FilterModel filterModel = new FilterModel();
+        filterModel.setSubscriberId(subscriberModel.getId());
+        filterModel.setFilter(s);
+        filterService.save(filterModel);
+
+        JSONObject json = new JSONObject();
+        try{
+            json.put("username","Test_1");
+            json.put("token","testToken_1");
+        }catch (JSONException e){
+        }
+
+        String response = given().port(port).contentType("application/json")
+                .body(json.toString())
+                .when().post("/notify/notifyLogon")
+                .andReturn().asString();
+
+        TokenModel tokenModel = tokenService.getTokenByTokenString("testToken_1");
+
+        Assert.assertNotNull(subscriberModel);
+        Assert.assertNotNull(tokenModel);
+        TokenRelationModel trm = tokenRelationService.getRelation(subscriberModel.getId(), tokenModel.getId());
+        Assert.assertNotNull(trm);
+        Assert.assertTrue(trm.getLogon());
+        try{
+            JSONObject responseJSON = new JSONObject(response) ;
+            Assert.assertEquals("Subscription",responseJSON.getString("status"));
+            Assert.assertEquals(s,responseJSON.getString("messagefilter"));
+        }catch(JSONException e){}
     }
 
     @Test
@@ -297,8 +355,11 @@ public class NotificationControllerTest {
                 .body(json.toString())
                 .when().post("/notify/notifyLogon")
                 .andReturn().asString();
-
-        Assert.assertEquals("No-Subscription",response);
+        try{
+            JSONObject responseJSON = new JSONObject(response) ;
+            Assert.assertEquals("No-Subscription",responseJSON.getString("status"));
+            Assert.assertEquals("",responseJSON.getString("messagefilter"));
+        }catch(JSONException e){}
         SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername("Test_2");
         TokenModel tokenModel = tokenService.getTokenByTokenString("testToken_2");
 
@@ -338,7 +399,12 @@ public class NotificationControllerTest {
                 .body(ckeckJson1.toString())
                 .when().post("/notify/notifyLogon")
                 .andReturn().asString();
-        Assert.assertEquals("No-Subscription",response);
+        try{
+            JSONObject responseJSON = new JSONObject(response) ;
+            Assert.assertEquals("No-Subscription",responseJSON.getString("status"));
+            Assert.assertEquals("",responseJSON.getString("messagefilter"));
+        }catch(JSONException e){}
+
 
         JSONObject ckeckJson2 = new JSONObject();
         try{
@@ -350,7 +416,11 @@ public class NotificationControllerTest {
                 .body(ckeckJson2.toString())
                 .when().post("/notify/notifyLogon")
                 .andReturn().asString();
-        Assert.assertEquals("No-Subscription",response);
+        try{
+            JSONObject responseJSON = new JSONObject(response) ;
+            Assert.assertEquals("No-Subscription",responseJSON.getString("status"));
+            Assert.assertEquals("",responseJSON.getString("messagefilter"));
+        }catch(JSONException e){}
     }
 
     @Test
@@ -383,13 +453,131 @@ public class NotificationControllerTest {
     }
 
     @Test
+    public void TestUpdateFilter(){
+        String s ="";
+        JSONObject filter = new JSONObject();
+        JSONObject json = new JSONObject();
+        try{
+            JSONArray projects = new JSONArray();
+            JSONObject projectFilter = new JSONObject();
+            projectFilter.put("Id","project1");
+            projectFilter.put("Subscribe",true);
+            projectFilter.put("event",new JSONObject());
+            projects.put(projectFilter);
+            filter.put("ezScrum",projects);
+            s = filter.toString();
+            json.put("username","Test_1");
+            json.put("filter",s);
+        }catch(JSONException e){}
+
+        String response = given().port(port).contentType("application/json")
+                .body(json.toString())
+                .when().post("/notify/updateFilter")
+                .andReturn().asString();
+
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername("Test_1");
+        FilterModel filterModel = filterService.findBySubscriberId(subscriberModel.getId());
+
+        Assert.assertEquals(s,filterModel.getFilter());
+        Assert.assertEquals("Success",response);
+    }
+
+    @Test
+    public void TestUpdateFilter_TwoTimes(){
+        String s ="";
+        JSONObject filter = new JSONObject();
+        JSONObject json = new JSONObject();
+        try{
+            JSONArray projects = new JSONArray();
+            JSONObject projectFilter = new JSONObject();
+            projectFilter.put("Id","project1");
+            projectFilter.put("Subscribe",true);
+            projectFilter.put("event",new JSONObject());
+            projects.put(projectFilter);
+            filter.put("ezScrum",projects);
+            s = filter.toString();
+            json.put("username","Test_1");
+            json.put("filter",s);
+        }catch(JSONException e){}
+
+        String response = given().port(port).contentType("application/json")
+                .body(json.toString())
+                .when().post("/notify/updateFilter")
+                .andReturn().asString();
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername("Test_1");
+        FilterModel filterModel = filterService.findBySubscriberId(subscriberModel.getId());
+
+        Assert.assertEquals(s,filterModel.getFilter());
+        Assert.assertEquals("Success",response);
+
+        filter = new JSONObject();
+        json = new JSONObject();
+        try{
+            JSONArray projects = new JSONArray();
+            JSONObject projectFilter1 = new JSONObject();
+            projectFilter1.put("Id","project1");
+            projectFilter1.put("Subscribe",true);
+            projectFilter1.put("event",new JSONObject());
+            projects.put(projectFilter1);
+            JSONObject projectFilter2 = new JSONObject();
+            projectFilter2.put("Id","project2");
+            projectFilter2.put("Subscribe",true);
+            projectFilter2.put("event",new JSONObject());
+            projects.put(projectFilter2);
+            filter.put("ezScrum",projects);
+            s = filter.toString();
+            json.put("username","Test_1");
+            json.put("filter",s);
+        }catch(JSONException e){}
+
+        response = given().port(port).contentType("application/json")
+                .body(json.toString())
+                .when().post("/notify/updateFilter")
+                .andReturn().asString();
+
+        subscriberModel = subscriberService.findSubscriberByUsername("Test_1");
+        filterModel = filterService.findBySubscriberId(subscriberModel.getId());
+
+        Assert.assertEquals(s,filterModel.getFilter());
+        Assert.assertEquals("Success",response);
+    }
+
+    @Test
+    public void TestUpdateFilter_Fail(){
+        String s ="";
+        JSONObject filter = new JSONObject();
+        JSONObject json = new JSONObject();
+        try{
+            JSONArray projects = new JSONArray();
+            JSONObject projectFilter = new JSONObject();
+            projectFilter.put("Id","project1");
+            projectFilter.put("Subscribe",true);
+            projectFilter.put("event",new JSONObject());
+            projects.put(projectFilter);
+            filter.put("ezScrum",projects);
+            s = filter.toString();
+            json.put("username","Test_2");
+            json.put("filter",s);
+        }catch(JSONException e){}
+
+        String response = given().port(port).contentType("application/json")
+                .body(json.toString())
+                .when().post("/notify/updateFilter")
+                .andReturn().asString();
+        Assert.assertEquals("Never subscribed",response);
+    }
+
+    @Test
     public void TestSendMessage(){
          JSONObject message =  new JSONObject();
         try{
             JSONArray array = new JSONArray();
+            JSONObject filter = new JSONObject();
+            filter.put("ezScrum",new JSONArray());
             array.put("Test_1");
             message.put("receivers",array.toString());
             message.put("tittle","title");
+            message.put("filter",filter.toString());
             message.put("body","body");
             message.put("eventSource","eventSource");
         }catch (JSONException e){
@@ -420,10 +608,13 @@ public class NotificationControllerTest {
         JSONObject message =  new JSONObject();
         try{
             JSONArray array = new JSONArray();
+            JSONObject filter = new JSONObject();
+            filter.put("ezScrum",new JSONArray());
             array.put("Test_1");
             array.put("Test_2");
             message.put("receivers",array.toString());
             message.put("tittle","title");
+            message.put("filter",filter.toString());
             message.put("body","body");
             message.put("eventSource","eventSource");
         }catch (JSONException e){
@@ -442,8 +633,105 @@ public class NotificationControllerTest {
         JSONObject message =  new JSONObject();
         try{
             JSONArray array = new JSONArray();
+            JSONObject filter = new JSONObject();
+            filter.put("ezScrum",new JSONArray());
             message.put("receivers",array.toString());
             message.put("tittle","title");
+            message.put("filter",filter.toString());
+            message.put("body","body");
+            message.put("eventSource","eventSource");
+        }catch (JSONException e){
+        }
+
+        String response = given().port(port).contentType("application/json")
+                .body(message.toString())
+                .when().post("/notify/send")
+                .andReturn().asString();
+
+        Assert.assertEquals("Send notification fail.",response);
+    }
+
+    @Test
+    public void TestSendMessage_HaveFilter(){
+        String s ="";
+        JSONObject filter = new JSONObject();
+        try{
+            JSONArray projects = new JSONArray();
+            JSONObject projectFilter = new JSONObject();
+            projectFilter.put("Id","project1");
+            projectFilter.put("Subscribe",true);
+            projectFilter.put("event",new JSONObject());
+            projects.put(projectFilter);
+            filter.put("ezScrum",projects);
+            s = filter.toString();
+        }catch(JSONException e){}
+
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername("Test_1");
+        FilterModel filterModel = new FilterModel();
+        filterModel.setSubscriberId(subscriberModel.getId());
+        filterModel.setFilter(s);
+        filterService.save(filterModel);
+
+        JSONObject message = new JSONObject();
+        try{
+            JSONArray array = new JSONArray();
+            JSONObject messageFilter = new JSONObject();
+            messageFilter.put("From","ezScrum");
+            messageFilter.put("Id","project1");
+            messageFilter.put("event","");
+            array.put("Test_1");
+            message.put("receivers",array.toString());
+            message.put("tittle","title");
+            message.put("filter",messageFilter.toString());
+            message.put("body","body");
+            message.put("eventSource","eventSource");
+        }catch (JSONException e){
+        }
+
+        String response = given().port(port).contentType("application/json")
+                .body(message.toString())
+                .when().post("/notify/send")
+                .andReturn().asString();
+
+        Assert.assertEquals("Success",response);
+    }
+
+    @Test
+    public void TestSendMessage_HaveFilter_Fail(){
+        String s ="";
+        JSONObject filter = new JSONObject();
+        try{
+            JSONArray projects = new JSONArray();
+            JSONObject projectFilter1 = new JSONObject();
+            projectFilter1.put("Id","project1");
+            projectFilter1.put("Subscribe",true);
+            projectFilter1.put("event",new JSONObject());
+            JSONObject projectFilter2 = new JSONObject();
+            projectFilter2.put("Id","project2");
+            projectFilter2.put("Subscribe",false);
+            projectFilter2.put("event",new JSONObject());
+            projects.put(projectFilter2);
+            filter.put("ezScrum",projects);
+            s = filter.toString();
+        }catch(JSONException e){}
+
+        SubscriberModel subscriberModel = subscriberService.findSubscriberByUsername("Test_1");
+        FilterModel filterModel = new FilterModel();
+        filterModel.setSubscriberId(subscriberModel.getId());
+        filterModel.setFilter(s);
+        filterService.save(filterModel);
+
+        JSONObject message = new JSONObject();
+        try{
+            JSONArray array = new JSONArray();
+            JSONObject messageFilter = new JSONObject();
+            messageFilter.put("From","ezScrum");
+            messageFilter.put("Id","project2");
+            messageFilter.put("event","");
+            array.put("Test_1");
+            message.put("receivers",array.toString());
+            message.put("tittle","title");
+            message.put("filter",messageFilter.toString());
             message.put("body","body");
             message.put("eventSource","eventSource");
         }catch (JSONException e){

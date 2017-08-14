@@ -3,12 +3,8 @@ package ntut.csie.model;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.*;
 import java.util.Properties;
-import java.io.FileInputStream;
-import java.io.OutputStream;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -88,10 +84,12 @@ public class FCMSender {
 
     private JSONObject buildMessage() throws JSONException{
         JSONObject parent = new JSONObject();
+
         parent.put("to",token);
         JSONObject message = new JSONObject();
         message.put("title",title);
         message.put("body",body);
+        message.put("icon","/ezScrum/images/scrum_16.png");
         message.put("click_action",jumpUrl);
         parent.put("notification",message);
 
